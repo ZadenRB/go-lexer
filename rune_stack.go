@@ -9,11 +9,11 @@ type runeStack struct {
 	start *runeNode
 }
 
-func newRuneStack() runeStack {
+func NewRuneStack() runeStack {
 	return runeStack{}
 }
 
-func (s *runeStack) push(r rune) {
+func (s *runeStack) Push(r rune) {
 	node := &runeNode{r: r}
 	if s.start == nil {
 		s.start = node
@@ -23,9 +23,9 @@ func (s *runeStack) push(r rune) {
 	}
 }
 
-func (s *runeStack) pop() rune {
+func (s *runeStack) Pop() rune {
 	if s.start == nil {
-		return EOFRune
+		return rune(EOFToken)
 	} else {
 		n := s.start
 		s.start = n.next
@@ -33,6 +33,6 @@ func (s *runeStack) pop() rune {
 	}
 }
 
-func (s *runeStack) clear() {
+func (s *runeStack) Clear() {
 	s.start = nil
 }
