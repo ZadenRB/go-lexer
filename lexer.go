@@ -20,6 +20,8 @@ const (
 type Token struct {
 	Type  TokenType
 	Value string
+	Start int
+	End int
 }
 
 type L struct {
@@ -81,7 +83,7 @@ func (l *L) RunLexerSync() {
 	l.run()
 }
 
-// Current returns the value being being analyzed at this moment.
+// Current returns the value being analyzed at this moment.
 func (l *L) Current() string {
 	return l.Input[l.Start:l.Position]
 }
@@ -92,6 +94,8 @@ func (l *L) Emit(t TokenType) {
 	tok := Token{
 		Type:  t,
 		Value: l.Current(),
+		Start: l.Start,
+		End: l.Position,
 	}
 	l.Tokens <- tok
 	l.Start = l.Position
@@ -99,7 +103,7 @@ func (l *L) Emit(t TokenType) {
 }
 
 // Ignore clears the Rewind stack and then sets the current beginning Position
-// to the current Position in the Input which effectively ignores the section
+// to the current Position in the Input, which effectively ignores the section
 // of the Input being analyzed.
 func (l *L) Ignore() {
 	l.Start = l.Position
