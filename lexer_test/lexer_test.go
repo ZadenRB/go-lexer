@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bbuck/go-lexer"
+	"github.com/ZadenRB/go-lexer"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 )
 
 func NumberState(l *lexer.L) lexer.StateFunc {
-	l.Take("0123456789")
+	l.TakeMany("0123456789")
 	l.Emit(NumberToken)
 	if l.Peek() == '.' {
 		l.Next()
@@ -30,7 +30,7 @@ func IdentState(l *lexer.L) lexer.StateFunc {
 	for (r >= 'a' && r <= 'z') || r == '_' {
 		r = l.Next()
 	}
-	l.Rewind()
+	l.Backup()
 	l.Emit(IdentToken)
 
 	return WhitespaceState
@@ -38,7 +38,7 @@ func IdentState(l *lexer.L) lexer.StateFunc {
 
 func WhitespaceState(l *lexer.L) lexer.StateFunc {
 	r := l.Next()
-	if r == lexer.EOFRune {
+	if r == -1 {
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func Test_LexerMovingThroughString(t *testing.T) {
 		{"1", '1'},
 		{"12", '2'},
 		{"123", '3'},
-		{"123", lexer.EOFRune},
+		{"123", -1},
 	}
 
 	for _, test := range run {
@@ -81,7 +81,7 @@ func Test_LexerMovingThroughString(t *testing.T) {
 
 func Test_LexingNumbers(t *testing.T) {
 	l := lexer.New("123", NumberState)
-	l.Start()
+	l.RunLexer()
 	tok, done := l.NextToken()
 	if done {
 		t.Error("Expected a token, but lexer was finished")
@@ -110,7 +110,7 @@ func Test_LexingNumbers(t *testing.T) {
 	}
 }
 
-func Test_LexerRewind(t *testing.T) {
+func Test_LexerBackup(t *testing.T) {
 	l := lexer.New("1", nil)
 	r := l.Next()
 	if r != '1' {
@@ -123,7 +123,7 @@ func Test_LexerRewind(t *testing.T) {
 		return
 	}
 
-	l.Rewind()
+	l.Backup()
 	if l.Current() != "" {
 		t.Errorf("Expected empty string, but got %q", l.Current())
 		return
@@ -144,7 +144,7 @@ func Test_MultipleTokens(t *testing.T) {
 	}
 
 	l := lexer.New("123.hello  675.world", NumberState)
-	l.Start()
+	l.RunLexer()
 
 	for _, c := range cases {
 		tok, done := l.NextToken()
@@ -179,7 +179,7 @@ func Test_MultipleTokens(t *testing.T) {
 func Test_LexerError(t *testing.T) {
 	l := lexer.New("1", WhitespaceState)
 	l.ErrorHandler = func(e string) {}
-	l.Start()
+	l.RunLexer()
 
 	tok, done := l.NextToken()
 	if !done {
