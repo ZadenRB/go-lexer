@@ -127,8 +127,22 @@ func (l *L) Peek() rune {
 	return r
 }
 
-// Backup will take the last rune read (if any) and Rewind back. Rewinds can
-// occur more than once per call to Next but you can never Rewind past the
+// PeekMany performs n Next operations immediately followed by n Backup operations
+// returning the last peeked rune.
+func (l *L) PeekMany(n int) rune {
+	var r rune
+	for i := n; i > 0; i-- {
+		r = l.Next()
+	}
+	for i := n; i > 0; i-- {
+		l.Backup()
+	}
+
+	return r
+}
+
+// Backup will take the last rune read (if any) and back up. Backups can
+// occur more than once per call to Next, but you can never Backup past the
 // last point a token was emitted.
 func (l *L) Backup() bool {
 	r := l.Rewind.Pop()
@@ -141,38 +155,6 @@ func (l *L) Backup() bool {
 		}
 	}
 	return false
-}
-
-// Like Backup, but will only take you to the first character of the first token
-// that has not yet been emitted. Returns true if it reaches the last emission
-func (l *L) BackupToEmission() bool {
-	r := l.Rewind.Pop()
-	if r > rune(EOFToken) {
-		size := utf8.RuneLen(r)
-		l.Position -= size
-		if l.Position <= l.Start {
-			l.Next()
-			return true
-		} else {
-			return false
-		}
-	} else {
-		return true
-	}
-}
-
-// BackupEmit
-func (l *L) BackupEmit(t TokenType) {
-	l.Backup()
-	l.Emit(t)
-	l.Next()
-}
-
-func (l *L) BackupToEmissionEmit(t TokenType) {
-	if !l.BackupToEmission() {
-		l.Emit(t)
-		l.Next()
-	}
 }
 
 // Next pulls the next rune from the Lexer and returns it, moving the Position
@@ -224,7 +206,8 @@ func (l *L) TakePattern(p *regexp.Regexp) bool {
 	return false
 }
 
-// TakePattern receives a regex pattern and will continue over reach rune until a non-match is found
+// TakeManyPattern receives a regex pattern and will continue over each rune until
+// a non-match is found
 func (l *L) TakeManyPattern(p *regexp.Regexp) {
 	r := l.Next()
 	for p.MatchString(string(r)) {
